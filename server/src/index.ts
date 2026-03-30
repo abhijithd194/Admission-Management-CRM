@@ -1,14 +1,15 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { createContext } from './context';
 import { appRouter } from './routers/index';
 import { initDB } from './db';
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 // Health check
@@ -28,9 +29,16 @@ app.use(
   })
 );
 
+// Serve client static files in production
+const clientDist = path.resolve(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
+
 // Init DB & Start
 initDB();
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  console.log(`📡 tRPC endpoint: http://0.0.0.0:${PORT}/trpc`);
 });
